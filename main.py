@@ -1,15 +1,8 @@
-
-import json
-import numpy as np
 import tensorflow as tf
 import kerastuner as kt
 from tensorflow import keras
-from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.preprocessing import LabelEncoder
 from keras import models
-from keras import layers
-from keras import optimizers
-from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense, Embedding, GlobalAveragePooling1D
 from tensorflow.keras.preprocessing.text import Tokenizer
 from tensorflow.keras.preprocessing.sequence import pad_sequences
@@ -93,6 +86,7 @@ numIntents = len(labels)
 vocabSize = 10000
 maxSeqLen = 100
 
+
 #vectorize the labels
 labelEncoder= LabelEncoder()
 trainY = labelEncoder.fit_transform(trainIntents)
@@ -118,7 +112,7 @@ testX = padded_sequences = pad_sequences(testSeq, maxlen=maxSeqLen, truncating='
 from sklearn.dummy import DummyClassifier
 from sklearn.metrics import accuracy_score
 
-dummy = DummyClassifier(strategy="stratified")
+dummy = DummyClassifier(strategy="most_frequent")
 dummy.fit(trainX, trainY)
 dummyPred = dummy.predict(testX)
 dummyAcc = accuracy_score(testY, dummyPred)
@@ -132,9 +126,9 @@ def modelBuilder(hp):
     model.add(GlobalAveragePooling1D())
 
     #find optimal number of units in the first layer
-    hp_units = hp.Int('units', min_value=32, max_value=512, step=32)
+    hpUnits = hp.Int('units', min_value=32, max_value=512, step=32)
    
-    model.add(Dense(units=hp_units, activation='relu'))
+    model.add(Dense(units=hpUnits, activation='relu'))
     model.add(Dropout(0.5))
     model.add(Dense(16))
     model.add(Dense(16))
@@ -176,9 +170,9 @@ bestEpoch = accuracyPerEpoch.index(max(accuracyPerEpoch)) + 1
 print('Best epoch: ',bestEpoch)
 
 #now retrain with best epoch
-hypermodel = tuner.hypermodel.build(bestHyp)
-hypermodel.fit(trainX, trainY, epochs=bestEpoch, validation_data=(validX, validY))
+modelFinal = tuner.hypermodel.build(bestHyp)
+modelFinal.fit(trainX, trainY, epochs=bestEpoch, validation_data=(validX, validY))
 
-result = hypermodel.evaluate(testX, testY)
+result = modelFinal.evaluate(testX, testY)
 print(result)
 
